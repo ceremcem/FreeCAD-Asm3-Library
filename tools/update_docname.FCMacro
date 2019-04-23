@@ -1,0 +1,53 @@
+# ---------------------------------------------------------------------------
+# Repo: https://github.com/ceremcem/assembly-dimensions
+# ---------------------------------------------------------------------------
+import FreeCAD
+import re
+echo = FreeCAD.Console.PrintMessage
+warn = FreeCAD.Console.PrintWarning
+
+cell_regex = re.compile('^([A-Z]+)([0-9]+)$')
+def get_cells(sheet):
+	return filter(cell_regex.search, sheet.PropertiesList)
+
+def next_row(cell_name, dist=1):
+	match = cell_regex.match(cell_name)
+	if match:
+		col_name = match.group(1)
+		row_num = match.group(2)
+		next_row_name = int(row_num) + dist
+		return "%s%d" % (col_name, next_row_name)
+	else:
+		raise "how come no match?"
+
+cmd_regex = re.compile('^#!\s?([a-z-]+)\s?(.*)')
+for doc_name, doc in App.listDocuments().iteritems():
+	echo('Processing commands in document: %s\n' % (doc.Label))
+	sheets = doc.findObjects('Spreadsheet::Sheet')
+
+	for sheet in sheets:
+		for cell in get_cells(sheet):
+			#echo('cell: %s (next col: %s)\n' % (cell, next_col(cell)))
+			content = sheet.get(cell)
+			try:
+				search = cmd_regex.search(content)
+			except:
+				continue
+
+			if search:
+				#echo('command row found: ' + content)
+				cmd = search.group(1)
+				try:
+					args = search.group(2)
+				except:
+					args = ''
+				#echo("command is: %s param is: %s\n" % (cmd, args))
+
+				# Use document name as parameter source
+				if cmd == 'docname':
+					echo("...found 'docname' command...\n")
+					sheet.set(next_row(cell), "'" + doc.Label)
+					break  # It's unwise to use the same command multiple times in the same Spreadsheet
+	doc.recompute()
+
+Gui.runCommand('asm3CmdSolve',0)

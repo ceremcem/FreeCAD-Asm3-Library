@@ -1,0 +1,21 @@
+=def get_from_table(table, key, value_column):
+    #@pybegin
+    row_num = 1
+    min_rows = 10
+    _min_rows = min_rows
+    while True :
+        try:
+            _key = table.get('A' + str(row_num))
+            if str(_key) == str(key):
+                value = table.get(value_column + str(row_num))
+                break
+
+            _min_rows = min_rows
+        except:
+            _min_rows -= 1
+            if _min_rows == 0:
+                raise "No value can be found for key " + str(key)
+
+        row_num += 1
+
+    return value

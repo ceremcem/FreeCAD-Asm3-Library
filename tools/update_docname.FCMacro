@@ -1,6 +1,35 @@
-# ---------------------------------------------------------------------------
-# Repo: https://github.com/ceremcem/assembly-dimensions
-# ---------------------------------------------------------------------------
+'''
+Description
+===========
+
+Replaces the cell under '#!docname' with the document's file name. 
+Searches through all opened documents.
+
+Usage Example
+=============
+
+Assuming the docname is "MC-1.5_6-G-3.81.FCstd". Create the following layout in a spreadsheet: 
+
++-----------------+-----------------------------------------+-------------------------------------------+---------------------------------------------+
+|   #!docname     | Regex for Parameters from Document Name |                 Pin Count                 |              Pin Distance (mm)              |
++-----------------+-----------------------------------------+-------------------------------------------+---------------------------------------------+
+|                 | ^MC-1.5_([0-9]+)-G-([0-9\.]+).*         | =._py.int(._re.search(.B2, .A2).group(1)) | =._py.float(._re.search(.B2, .A2).group(2)) |
++-----------------+-----------------------------------------+-------------------------------------------+---------------------------------------------+
+
+
+After running this macro, the empty [1,0] cell becomes "MC-1.5_6-G-3.81", so the rest of the cells
+will be evaluated to the following values: 
+
++-----------------+-----------------------------------------+-----------+-------------------+
+|   #!docname     | Regex for Parameters from Document Name | Pin Count | Pin Distance (mm) |
++-----------------+-----------------------------------------+-----------+-------------------+
+| MC-1.5_6-G-3.81 | ^MC-1.5_([0-9]+)-G-([0-9\.]+).*         |         6 |              3.81 |
++-----------------+-----------------------------------------+-----------+-------------------+
+
+
+# Repo: https://github.com/ceremcem/FreeCAD-Asm3-Library/tools
+'''
+
 import FreeCAD
 import re
 echo = FreeCAD.Console.PrintMessage
@@ -18,11 +47,11 @@ def next_row(cell_name, dist=1):
 		next_row_name = int(row_num) + dist
 		return "%s%d" % (col_name, next_row_name)
 	else:
-		raise "how come no match?"
+		raise "how come we have no match?"
 
 cmd_regex = re.compile('^#!\s?([a-z-]+)\s?(.*)')
-for doc_name, doc in App.listDocuments().iteritems():
-	echo('Processing commands in document: %s\n' % (doc.Label))
+for doc_name, doc in App.listDocuments().items():
+	echo('Processing document: %s\n' % (doc.Label))
 	sheets = doc.findObjects('Spreadsheet::Sheet')
 
 	for sheet in sheets:
@@ -45,7 +74,7 @@ for doc_name, doc in App.listDocuments().iteritems():
 
 				# Use document name as parameter source
 				if cmd == 'docname':
-					echo("...found 'docname' command...\n")
+					echo("...found 'docname' command.\n")
 					sheet.set(next_row(cell), "'" + doc.Label)
 					break  # It's unwise to use the same command multiple times in the same Spreadsheet
 	doc.recompute()
